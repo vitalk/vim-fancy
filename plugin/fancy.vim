@@ -1,10 +1,10 @@
-if exists('g:loaded_fancy_edit') || &cp || version < 700
+if exists('g:loaded_fancy') || &cp || version < 700
   finish
 endif
-let g:loaded_fancy_edit = 1
+let g:loaded_fancy = 1
 
 
-augroup fancy_edit
+augroup fancy_files
   au!
   au BufWriteCmd  fancy://**  call fancy#write(expand('<amatch>'))
   au BufLeave     fancy://**  call fancy#sync()
@@ -15,7 +15,7 @@ augroup fancy_edit
 augroup END
 
 
-augroup fancy_edit_markdown
+augroup fancy_markdown
   au!
   au FileType markdown nnore <s-e> :call fancy#edit()<cr>
 augroup END

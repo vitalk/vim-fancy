@@ -1,6 +1,6 @@
-# Fancy edit
+# Fancy
 
-Edit fenced code blocks as it should be.
+Fenced code blocks as it should be.
 
 
 ## Installation
@@ -11,13 +11,13 @@ Use your favorite installation method:
 
   ```sh
   cd .vim/bundle
-  git clone https://github.com/vitalk/vim-fancy-edit
+  git clone https://github.com/vitalk/vim-fancy
   ```
 
 - via Junegunn Choi [Plug](https://github.com/junegunn/vim-plug):
 
   ```viml
-  Plug 'vitalk/vim-fancy-edit'
+  Plug 'vitalk/vim-fancy'
   ```
 
   ```sh
