@@ -117,7 +117,7 @@ let s:fancy_prototype = {}
 fun! s:fancy() abort
   let [start, end] = s:get_start_end_position()
   if start == 0 && end == 0
-    call s:error('No fanced block found! Aborting!')
+    call s:error('No fenced block found! Aborting!')
     return
   endif
 
