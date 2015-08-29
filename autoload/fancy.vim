@@ -166,9 +166,17 @@ fun! s:lookup_fancy(id)
   return found[0]
 endf
 
+fun! s:search_forward(pattern)
+  return search(a:pattern, 'cnW')
+endf
+
+fun! s:search_backward(pattern)
+  return search(a:pattern, 'bcnW')
+endf
+
 fun! s:get_start_end_position()
-  let start = search('^```\w\+$', 'bcnW')
-  let end = search('^```$', 'cnW')
+  let start = s:search_backward('^```\w\+$')
+  let end = s:search_forward('^```$')
   return [start, end]
 endf
 
