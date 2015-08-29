@@ -24,3 +24,15 @@ augroup fancy_markdown
 augroup END
 
 " }}}
+" Configuration {{{
+
+let github_flavored_markdown = {}
+let github_flavored_markdown.start_at = '^```\w\+$'
+let github_flavored_markdown.end_at = '^```$'
+
+let filetypes = {}
+let filetypes.markdown = [github_flavored_markdown]
+
+let g:fancy_filetypes = get(g:, 'fancy_filetypes', filetypes)
+
+" }}}
