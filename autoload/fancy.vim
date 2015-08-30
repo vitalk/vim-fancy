@@ -124,7 +124,7 @@ fun! s:fancy() abort
   let found = 0
   for search_options in candidates
     let [start_at, end_at] = s:get_region_bounds(search_options)
-    if start_at != 0 || end_at != 0
+    if start_at != 0 && end_at != 0
       let found = 1
       break
     endif
