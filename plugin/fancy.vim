@@ -29,6 +29,10 @@ augroup END
 let github_flavored_markdown = {}
 let github_flavored_markdown.start_at = '^```\w\+$'
 let github_flavored_markdown.end_at = '^```$'
+fun! github_flavored_markdown.filetype(fancy)
+  let text = join(a:fancy.buffer.read(a:fancy.start_at, a:fancy.start_at), '\n')
+  return substitute(text, '```', '', '')
+endf
 
 let filetypes = {}
 let filetypes.markdown = [github_flavored_markdown]

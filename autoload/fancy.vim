@@ -153,12 +153,10 @@ fun! s:fancy_sync() dict abort
 endf
 
 fun! s:fancy_filetype() dict abort
-  let pos = getpos('.')
-  let pos[2] = 0
-  call setpos('.', pos)
-
-  let text = join(self.buffer.read(self.start_at, self.start_at), '\n')
-  return substitute(text, '```', '', '')
+  let filetype = self.options.filetype(self)
+  return empty(filetype)
+        \ ? self.buffer.getvar('&filetype')
+        \ : filetype
 endf
 
 fun! s:fancy_text() dict abort
