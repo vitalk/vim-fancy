@@ -115,16 +115,31 @@ call s:add_methods('buffer', [
 let s:fancy_prototype = {}
 
 fun! s:fancy() abort
-  let [start, end] = s:get_start_end_position()
-  if start == 0 && end == 0
+  let candidates = s:get_filetype_options(&filetype)
+  if empty(candidates)
+    call s:error(printf('%s: no available search options', &filetype))
+    return
+  endif
+
+  let found = 0
+  for search_options in candidates
+    let [start_at, end_at] = s:get_region_bounds(search_options)
+    if start_at != 0 && end_at != 0
+      let found = 1
+      break
+    endif
+  endfor
+
+  if !found
     call s:error('No fenced block found! Aborting!')
     return
   endif
 
   let fancy = {
         \ 'id': s:get_id(),
-        \ 'start': start,
-        \ 'end': end,
+        \ 'options': search_options,
+        \ 'start_at': start_at,
+        \ 'end_at': end_at,
         \ 'buffer': s:buffer()
         \ }
   call extend(fancy, s:fancy_prototype, 'keep')
@@ -138,16 +153,14 @@ fun! s:fancy_sync() dict abort
 endf
 
 fun! s:fancy_filetype() dict abort
-  let pos = getpos('.')
-  let pos[2] = 0
-  call setpos('.', pos)
-
-  let text = join(self.buffer.read(self.start, self.start), '\n')
-  return substitute(text, '```', '', '')
+  let filetype = self.options.filetype(self)
+  return empty(filetype)
+        \ ? self.buffer.getvar('&filetype')
+        \ : filetype
 endf
 
 fun! s:fancy_text() dict abort
-  return self.buffer.read(self.start + 1, self.end - 1)
+  return self.buffer.read(self.start_at + 1, self.end_at - 1)
 endf
 
 fun! s:fancy_destroy() dict abort
@@ -166,10 +179,25 @@ fun! s:lookup_fancy(id)
   return found[0]
 endf
 
-fun! s:get_start_end_position()
-  let start = search('^```\w\+$', 'bcnW')
-  let end = search('^```$', 'cnW')
-  return [start, end]
+fun! s:get_filetype_options(ft)
+  if has_key(g:fancy_filetypes, a:ft)
+    return g:fancy_filetypes[a:ft]
+  endif
+  return []
+endf
+
+fun! s:search_forward(pattern)
+  return search(a:pattern, 'cnW')
+endf
+
+fun! s:search_backward(pattern)
+  return search(a:pattern, 'bcnW')
+endf
+
+fun! s:get_region_bounds(options)
+  let start_at = s:search_backward(a:options.start_at)
+  let end_at   = s:search_forward(a:options.end_at)
+  return [start_at, end_at]
 endf
 
 fun! s:edit()
@@ -208,16 +236,16 @@ fun! s:sync()
   endif
 
   " Sync any changes.
-  if (fancy.end - fancy.start > 1)
-    exe printf('%s,%s delete _', fancy.start + 1, fancy.end - 1)
+  if (fancy.end_at - fancy.start_at > 1)
+    exe printf('%s,%s delete _', fancy.start_at + 1, fancy.end_at - 1)
   endif
-  call append(fancy.start, buffer.read())
+  call append(fancy.start_at, buffer.read())
 
   " Restore the original cursor position.
   call setpos('.', fancy.buffer.pos)
 
   " Update start/end block position.
-  let [fancy.start, fancy.end] = s:get_start_end_position()
+  let [fancy.start_at, fancy.end_at] = s:get_region_bounds(fancy.options)
 endf
 
 fun! s:write()
