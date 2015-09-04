@@ -34,8 +34,19 @@ fun! github_flavored_markdown.filetype(fancy)
   return substitute(text, '```', '', '')
 endf
 
+let bitbucket_markdown = {}
+let bitbucket_markdown.start_at = '\(```\n\)\@<=\#!\w\+$'
+let bitbucket_markdown.end_at = '^```$'
+fun! bitbucket_markdown.filetype(fancy)
+  let text = join(a:fancy.buffer.read(a:fancy.start_at, a:fancy.start_at), '\n')
+  return substitute(text, '\#!', '', '')
+endf
+
 let filetypes = {}
-let filetypes.markdown = [github_flavored_markdown]
+let filetypes.markdown = [
+      \ bitbucket_markdown,
+      \ github_flavored_markdown,
+      \ ]
 
 let g:fancy_filetypes = get(g:, 'fancy_filetypes', filetypes)
 
