@@ -11,8 +11,8 @@ let g:loaded_fancy = 1
 augroup fancy_files
   au!
   au BufWriteCmd  fancy://**  call fancy#write(expand('<amatch>'))
-  au BufLeave     fancy://**  call fancy#sync()
-  au BufWipeout   fancy://**  call fancy#destroy(expand('<abuf>'))
+  au BufLeave     fancy://**  call fancy#sync(expand('<amatch>'))
+  au BufWipeout   fancy://**  call fancy#destroy(expand('<amatch>'))
   au BufEnter     fancy://**
         \ setl bufhidden=wipe bl noswapfile |
         \ nnore <buffer> q :write<bar>close<cr>

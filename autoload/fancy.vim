@@ -219,14 +219,15 @@ fun! s:edit()
 endf
 
 fun! s:destroy(...)
-  let bufnr = a:0 ? str2nr(a:1[0]) : '%'
+  let bufnr = a:0 ? a:1[0] : '%'
   let buffer = s:buffer(bufnr)
   let fancy = s:lookup_fancy(buffer.fancy_id())
   call fancy.destroy()
 endf
 
-fun! s:sync()
-  let buffer = s:buffer()
+fun! s:sync(...)
+  let bufnr = a:0 ? a:1[0] : '%'
+  let buffer = s:buffer(bufnr)
   let fancy = s:lookup_fancy(buffer.fancy_id())
 
   " Go to original buffer.
@@ -248,8 +249,9 @@ fun! s:sync()
   let [fancy.start_at, fancy.end_at] = s:get_region_bounds(fancy.options)
 endf
 
-fun! s:write()
-  sil exe 'write! '.s:buffer().path()
+fun! s:write(...)
+  let bufnr = a:0 ? a:1[0] : '%'
+  sil exe 'write! '.s:buffer(bufnr).path()
   setl nomodified
 endf
 
@@ -265,11 +267,11 @@ fun! fancy#edit() abort
 endf
 
 fun! fancy#sync(...) abort
-  return s:sync()
+  return s:sync(a:000)
 endf
 
 fun! fancy#write(...) abort
-  return s:write()
+  return s:write(a:000)
 endf
 
 fun! fancy#destroy(...) abort
