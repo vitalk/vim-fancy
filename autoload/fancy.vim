@@ -119,9 +119,9 @@ fun! s:buffer_write(...) dict abort
 endf
 
 fun! s:buffer_indent(...) dict abort
-  let indent = a:0 ? a:1 : 0
+  let indent   = a:0 ? a:1 : 0
   let start_at = (a:0 > 1) ? a:2 : 1
-  let end_at = (a:0 == 3) ? a:3 : '$'
+  let end_at   = (a:0 == 3) ? a:3 : '$'
   return indent < 0 ?
         \ map(self.read(start_at, end_at), 's:dedent_line(v:val, indent)') :
         \ map(self.read(start_at, end_at), 's:indent_line(v:val, indent)')
