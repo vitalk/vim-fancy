@@ -118,6 +118,12 @@ fun! s:buffer_write(...) dict abort
   return setline(lnum, text)
 endf
 
+" Returns the buffer content with or without indentation.
+"
+" The arguments are:
+" - the indentation level (dedent buffer when value is negative and indent otherwise)
+" - the line number to start (read from the beginning if not set)
+" - the line number to end (process until the end if not set)
 fun! s:buffer_indent(...) dict abort
   let indent   = a:0 ? a:1 : 0
   let start_at = (a:0 > 1) ? a:2 : 1
