@@ -24,6 +24,20 @@ fun! s:get_id()
   return s:id
 endf
 
+fun! s:indent_line(line, indent)
+  return printf('%*s%s', a:indent, a:indent ? ' ' : '', a:line)
+endf
+
+fun! s:dedent_line(line, indent)
+  return substitute(a:line, '^\s\{'.a:indent.'\}', '', '')
+endf
+
+fun! s:indent_lines(lines, indent)
+  return a:indent < 0 ?
+        \ map(lines, 's:dedent_line(v:val, indent)') :
+        \ map(lines, 's:indent_line(v:val, indent)')
+endf
+
 " }}}
 " Buffer prototype {{{
 
@@ -104,9 +118,18 @@ fun! s:buffer_write(...) dict abort
   return setline(lnum, text)
 endf
 
+fun! s:buffer_indent(...) dict abort
+  let indent = a:0 ? a:1 : 0
+  let start_at = (a:0 > 1) ? a:2 : 1
+  let end_at = (a:0 == 3) ? a:3 : '$'
+  return indent < 0 ?
+        \ map(self.read(start_at, end_at), 's:dedent_line(v:val, indent)') :
+        \ map(self.read(start_at, end_at), 's:indent_line(v:val, indent)')
+endf
+
 call s:add_methods('buffer', [
       \ 'getvar', 'setvar', 'name', 'delete', 'read', 'write',
-      \ 'exists', 'spec', 'path', 'fancy_id'
+      \ 'exists', 'spec', 'path', 'fancy_id', 'indent'
       \ ])
 
 " }}}
@@ -140,7 +163,8 @@ fun! s:fancy() abort
         \ 'options': search_options,
         \ 'start_at': start_at,
         \ 'end_at': end_at,
-        \ 'buffer': s:buffer()
+        \ 'buffer': s:buffer(),
+        \ 'indent_level': indent(start_at)
         \ }
   call extend(fancy, s:fancy_prototype, 'keep')
 
@@ -160,7 +184,10 @@ fun! s:fancy_filetype() dict abort
 endf
 
 fun! s:fancy_text() dict abort
-  return self.buffer.read(self.start_at + 1, self.end_at - 1)
+  return self.buffer.indent(
+        \ -self.indent_level,
+        \ self.start_at + 1,
+        \ self.end_at - 1)
 endf
 
 fun! s:fancy_destroy() dict abort
@@ -240,7 +267,7 @@ fun! s:sync(...)
   if (fancy.end_at - fancy.start_at > 1)
     exe printf('%s,%s delete _', fancy.start_at + 1, fancy.end_at - 1)
   endif
-  call append(fancy.start_at, buffer.read())
+  call append(fancy.start_at, buffer.indent(fancy.indent_level))
 
   " Restore the original cursor position.
   call setpos('.', fancy.buffer.pos)
