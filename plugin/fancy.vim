@@ -27,11 +27,11 @@ augroup END
 " Configuration {{{
 
 let github_flavored_markdown = {}
-let github_flavored_markdown.start_at = '^```\w\+$'
-let github_flavored_markdown.end_at = '^```$'
+let github_flavored_markdown.start_at = '^\(\s\+\)\?```\w\+$'
+let github_flavored_markdown.end_at = '^\(\s\+\)\?```$'
 fun! github_flavored_markdown.filetype(fancy)
   let text = join(a:fancy.buffer.read(a:fancy.start_at, a:fancy.start_at), '\n')
-  return substitute(text, '```', '', '')
+  return substitute(text, '\(\s\+\)\?```', '', '')
 endf
 
 let bitbucket_markdown = {}
