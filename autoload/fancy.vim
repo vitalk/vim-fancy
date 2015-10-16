@@ -33,9 +33,9 @@ fun! s:dedent_line(line, indent)
 endf
 
 fun! s:indent_lines(lines, indent)
-  return a:indent < 0 ?
-        \ map(lines, 's:dedent_line(v:val, indent)') :
-        \ map(lines, 's:indent_line(v:val, indent)')
+  return a:indent < 0
+        \ ? map(lines, 's:dedent_line(v:val, indent)')
+        \ : map(lines, 's:indent_line(v:val, indent)')
 endf
 
 " }}}
@@ -127,9 +127,9 @@ endf
 fun! s:buffer_indent(indent, ...) dict abort
   let start_at = a:0 ? a:1 : 1
   let end_at   = (a:0 > 1) ? a:2 : '$'
-  return a:indent < 0 ?
-        \ map(self.read(start_at, end_at), 's:dedent_line(v:val, a:indent)') :
-        \ map(self.read(start_at, end_at), 's:indent_line(v:val, a:indent)')
+  return a:indent < 0
+        \ ? map(self.read(start_at, end_at), 's:dedent_line(v:val, a:indent)')
+        \ : map(self.read(start_at, end_at), 's:indent_line(v:val, a:indent)')
 endf
 
 call s:add_methods('buffer', [
