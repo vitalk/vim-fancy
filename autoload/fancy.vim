@@ -124,13 +124,12 @@ endf
 " - the indentation level (dedent buffer when value is negative and indent otherwise)
 " - the line number to start (read from the beginning if not set)
 " - the line number to end (process until the end if not set)
-fun! s:buffer_indent(...) dict abort
-  let indent   = a:0 ? a:1 : 0
-  let start_at = (a:0 > 1) ? a:2 : 1
-  let end_at   = (a:0 == 3) ? a:3 : '$'
-  return indent < 0 ?
-        \ map(self.read(start_at, end_at), 's:dedent_line(v:val, indent)') :
-        \ map(self.read(start_at, end_at), 's:indent_line(v:val, indent)')
+fun! s:buffer_indent(indent, ...) dict abort
+  let start_at = a:0 ? a:1 : 1
+  let end_at   = (a:0 > 1) ? a:2 : '$'
+  return a:indent < 0 ?
+        \ map(self.read(start_at, end_at), 's:dedent_line(v:val, a:indent)') :
+        \ map(self.read(start_at, end_at), 's:indent_line(v:val, a:indent)')
 endf
 
 call s:add_methods('buffer', [
