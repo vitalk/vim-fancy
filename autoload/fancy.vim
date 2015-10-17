@@ -32,12 +32,6 @@ fun! s:dedent_line(line, indent)
   return substitute(a:line, '^\s\{'.a:indent.'\}', '', '')
 endf
 
-fun! s:indent_lines(lines, indent)
-  return a:indent < 0
-        \ ? map(lines, 's:dedent_line(v:val, indent)')
-        \ : map(lines, 's:indent_line(v:val, indent)')
-endf
-
 " }}}
 " Buffer prototype {{{
 
