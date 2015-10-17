@@ -291,13 +291,6 @@ fun! s:lookup_fancy(id)
   return found[0]
 endf
 
-fun! s:matchers_by_filetype(ft)
-  if has_key(g:fancy_filetypes, a:ft)
-    return g:fancy_filetypes[a:ft]
-  endif
-  return []
-endf
-
 fun! s:edit()
   let fancy = fancy#fancy()
   if (type(fancy) != type({}))
