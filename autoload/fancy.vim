@@ -200,17 +200,24 @@ fun! s:loader_is_cached(ft) dict abort
   return has_key(self.filetypes, a:ft)
 endf
 
+fun! s:loader_is_defined(ft) dict abort
+  let func = 'autoload/fancy/ft/'.a:ft.'.vim'
+  return !empty(globpath(&rtp, func))
+endf
+
 fun! s:loader_load_by_filetype(ft) dict abort
   if self.is_cached(a:ft)
     return self.load(a:ft)
-  else
+
+  elseif self.is_defined(a:ft)
     let matchers = fancy#ft#{a:ft}#matchers()
     call self.save(a:ft, matchers)
     return matchers
+  endif
 endf
 
 call s:add_methods('loader', [
-      \ 'load', 'save', 'is_cached', 'load_by_filetype'
+      \ 'load', 'save', 'is_cached', 'load_by_filetype', 'is_defined'
       \ ])
 
 " }}}
