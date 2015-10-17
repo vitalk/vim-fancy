@@ -24,14 +24,6 @@ fun! s:get_id()
   return s:id
 endf
 
-fun! s:indent_line(line, indent)
-  return printf('%*s%s', a:indent, a:indent ? ' ' : '', a:line)
-endf
-
-fun! s:dedent_line(line, indent)
-  return substitute(a:line, '^\s\{'.a:indent.'\}', '', '')
-endf
-
 " }}}
 " Buffer prototype {{{
 
@@ -122,8 +114,8 @@ fun! s:buffer_indent(indent, ...) dict abort
   let start_at = a:0 ? a:1 : 1
   let end_at   = (a:0 > 1) ? a:2 : '$'
   return a:indent < 0
-        \ ? map(self.read(start_at, end_at), 's:dedent_line(v:val, a:indent)')
-        \ : map(self.read(start_at, end_at), 's:indent_line(v:val, a:indent)')
+        \ ? map(self.read(start_at, end_at), 'fancy#util#dedent_line(v:val, a:indent)')
+        \ : map(self.read(start_at, end_at), 'fancy#util#indent_line(v:val, a:indent)')
 endf
 
 call s:add_methods('buffer', [
