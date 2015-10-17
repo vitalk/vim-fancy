@@ -131,7 +131,8 @@ let s:matcher_prototype = {}
 fun! s:matcher(...) abort
   let matcher = {
         \ 'start_at': 0,
-        \ 'end_at': 0
+        \ 'end_at': 0,
+        \ 'indent_level': 0,
         \ }
   call extend(matcher, s:matcher_prototype, 'keep')
   return matcher
@@ -142,8 +143,6 @@ fun! s:matcher_start_line(...) dict abort
 endf
 
 " Returns the number of the last line of the region.
-"
-" - the indentation level of the first region line is optional.
 fun! s:matcher_end_line(...) dict abort
 endf
 
@@ -157,8 +156,9 @@ endf
 " Find fenced region and save it position if any. Return false if
 " no region has been found and true otherwise.
 fun! s:matcher_find_region(...) dict abort
-  let self.start_at = self.start_line()
-  let self.end_at   = self.end_line(indent(self.start_at))
+  let self.start_at     = self.start_line()
+  let self.indent_level = indent(self.start_at)
+  let self.end_at       = self.end_line()
   return (self.start_at != 0 && self.end_at != 0) ? 1 : 0
 endf
 
@@ -249,7 +249,6 @@ fun! s:fancy() abort
         \ 'id': s:get_id(),
         \ 'matcher': matcher,
         \ 'buffer': s:buffer(),
-        \ 'indent_level': indent(matcher.start_at)
         \ }
   call extend(fancy, s:fancy_prototype, 'keep')
 
@@ -270,7 +269,7 @@ endf
 
 fun! s:fancy_text() dict abort
   return self.buffer.indent(
-        \ -self.indent_level,
+        \ -self.matcher.indent_level,
         \ self.matcher.start_at + 1,
         \ self.matcher.end_at - 1)
 endf
@@ -331,7 +330,7 @@ fun! s:sync(...)
   if (fancy.matcher.end_at - fancy.matcher.start_at > 1)
     exe printf('%s,%s delete _', fancy.matcher.start_at + 1, fancy.matcher.end_at - 1)
   endif
-  call append(fancy.matcher.start_at, buffer.indent(fancy.indent_level))
+  call append(fancy.matcher.start_at, buffer.indent(fancy.matcher.indent_level))
 
   " Restore the original cursor position.
   call setpos('.', fancy.buffer.pos)

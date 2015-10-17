@@ -11,8 +11,8 @@ fun! fancy#ft#markdown#matchers()
     return self.search_backward('^\(\s\+\)\?```\w\+$')
   endf
 
-  fun! github_flavored_markdown.end_line(indent, ...) dict abort
-    return self.search_forward('^\(\s\{'.a:indent.'\}\)\?```$')
+  fun! github_flavored_markdown.end_line(...) dict abort
+    return self.search_forward('^\(\s\{'.self.indent_level.'\}\)\?```$')
   endf
 
   fun! github_flavored_markdown.filetype(fancy) dict abort
