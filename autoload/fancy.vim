@@ -138,21 +138,72 @@ call s:add_methods('buffer', [
       \ ])
 
 " }}}
+" Matcher prototype {{{
+
+let s:matcher_prototype = {}
+
+fun! s:matcher(...) abort
+  let matcher = {
+        \ 'start_at': 0,
+        \ 'end_at': 0
+        \ }
+  call extend(matcher, s:matcher_prototype, 'keep')
+  return matcher
+endf
+
+" Returns the number of the first line of the region.
+fun! s:matcher_start_line(...) dict abort
+endf
+
+" Returns the number of the last line of the region.
+"
+" - the indentation level of the first region line is optional.
+fun! s:matcher_end_line(...) dict abort
+endf
+
+" Returns the filetype of the found region.
+"
+" - the fancy object (can be used to read and extract data from
+"   original buffer).
+fun! s:matcher_filetype(...) dict abort
+endf
+
+" Find fenced region and save it position if any. Return false if
+" no region has been found and true otherwise.
+fun! s:matcher_find_region(...) dict abort
+  let self.start_at = self.start_line()
+  let self.end_at   = self.end_line(indent(self.start_at))
+  return (self.start_at != 0 && self.end_at != 0) ? 1 : 0
+endf
+
+fun! s:matcher_search_forward(pattern) dict abort
+  return search(a:pattern, 'cnW')
+endf
+
+fun! s:matcher_search_backward(pattern) dict abort
+  return search(a:pattern, 'bcnW')
+endf
+
+call s:add_methods('matcher', [
+      \ 'filetype', 'start_line', 'end_line', 'find_region',
+      \ 'search_forward', 'search_backward'
+      \ ])
+
+" }}}
 " Fancy prototype {{{
 
 let s:fancy_prototype = {}
 
 fun! s:fancy() abort
-  let candidates = s:get_filetype_options(&filetype)
-  if empty(candidates)
-    call s:error(printf('%s: no available search options', &filetype))
+  let matchers = s:get_filetype_matchers(&filetype)
+  if empty(matchers)
+    call s:error(printf('%s: no available matcher', &filetype))
     return
   endif
 
   let found = 0
-  for search_options in candidates
-    let [start_at, end_at] = s:get_region_bounds(search_options)
-    if start_at != 0 && end_at != 0
+  for matcher in matchers
+    if matcher.find_region()
       let found = 1
       break
     endif
@@ -165,11 +216,9 @@ fun! s:fancy() abort
 
   let fancy = {
         \ 'id': s:get_id(),
-        \ 'options': search_options,
-        \ 'start_at': start_at,
-        \ 'end_at': end_at,
+        \ 'matcher': matcher,
         \ 'buffer': s:buffer(),
-        \ 'indent_level': indent(start_at)
+        \ 'indent_level': indent(matcher.start_at)
         \ }
   call extend(fancy, s:fancy_prototype, 'keep')
 
@@ -182,7 +231,7 @@ fun! s:fancy_sync() dict abort
 endf
 
 fun! s:fancy_filetype() dict abort
-  let filetype = self.options.filetype(self)
+  let filetype = self.matcher.filetype(self)
   return empty(filetype)
         \ ? self.buffer.getvar('&filetype')
         \ : filetype
@@ -191,8 +240,8 @@ endf
 fun! s:fancy_text() dict abort
   return self.buffer.indent(
         \ -self.indent_level,
-        \ self.start_at + 1,
-        \ self.end_at - 1)
+        \ self.matcher.start_at + 1,
+        \ self.matcher.end_at - 1)
 endf
 
 fun! s:fancy_destroy() dict abort
@@ -211,25 +260,11 @@ fun! s:lookup_fancy(id)
   return found[0]
 endf
 
-fun! s:get_filetype_options(ft)
+fun! s:get_filetype_matchers(ft)
   if has_key(g:fancy_filetypes, a:ft)
     return g:fancy_filetypes[a:ft]
   endif
   return []
-endf
-
-fun! s:search_forward(pattern)
-  return search(a:pattern, 'cnW')
-endf
-
-fun! s:search_backward(pattern)
-  return search(a:pattern, 'bcnW')
-endf
-
-fun! s:get_region_bounds(options)
-  let start_at = s:search_backward(a:options.start_at)
-  let end_at   = s:search_forward(a:options.end_at)
-  return [start_at, end_at]
 endf
 
 fun! s:edit()
@@ -269,16 +304,16 @@ fun! s:sync(...)
   endif
 
   " Sync any changes.
-  if (fancy.end_at - fancy.start_at > 1)
-    exe printf('%s,%s delete _', fancy.start_at + 1, fancy.end_at - 1)
+  if (fancy.matcher.end_at - fancy.matcher.start_at > 1)
+    exe printf('%s,%s delete _', fancy.matcher.start_at + 1, fancy.matcher.end_at - 1)
   endif
-  call append(fancy.start_at, buffer.indent(fancy.indent_level))
+  call append(fancy.matcher.start_at, buffer.indent(fancy.indent_level))
 
   " Restore the original cursor position.
   call setpos('.', fancy.buffer.pos)
 
   " Update start/end block position.
-  let [fancy.start_at, fancy.end_at] = s:get_region_bounds(fancy.options)
+  call fancy.matcher.find_region()
 endf
 
 fun! s:write(...)
@@ -289,6 +324,10 @@ endf
 
 " }}}
 " Funcy public interface {{{
+
+fun! fancy#matcher() abort
+  return s:matcher()
+endf
 
 fun! fancy#fancy() abort
   return s:fancy()
