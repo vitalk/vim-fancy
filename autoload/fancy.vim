@@ -176,12 +176,50 @@ call s:add_methods('matcher', [
       \ ])
 
 " }}}
+" Loader prototype {{{
+
+let s:loader_prototype = {}
+
+fun! s:loader() abort
+  let loader = {
+        \ 'filetypes': {}
+        \ }
+  call extend(loader, s:loader_prototype, 'keep')
+  return loader
+endf
+
+fun! s:loader_load(ft) dict abort
+  return self.filetypes[a:ft]
+endf
+
+fun! s:loader_save(ft, list) dict abort
+  let self.filetypes[a:ft] = a:list
+endf
+
+fun! s:loader_is_cached(ft) dict abort
+  return has_key(self.filetypes, a:ft)
+endf
+
+fun! s:loader_load_by_filetype(ft) dict abort
+  if self.is_cached(a:ft)
+    return self.load(a:ft)
+  else
+    let matchers = fancy#ft#{a:ft}#matchers()
+    call self.save(a:ft, matchers)
+    return matchers
+endf
+
+call s:add_methods('loader', [
+      \ 'load', 'save', 'is_cached', 'load_by_filetype'
+      \ ])
+
+" }}}
 " Fancy prototype {{{
 
 let s:fancy_prototype = {}
 
 fun! s:fancy() abort
-  let matchers = s:get_filetype_matchers(&filetype)
+  let matchers = s:loader().load_by_filetype(&filetype)
   if empty(matchers)
     call s:error(printf('%s: no available matcher', &filetype))
     return
@@ -246,7 +284,7 @@ fun! s:lookup_fancy(id)
   return found[0]
 endf
 
-fun! s:get_filetype_matchers(ft)
+fun! s:matchers_by_filetype(ft)
   if has_key(g:fancy_filetypes, a:ft)
     return g:fancy_filetypes[a:ft]
   endif
