@@ -217,7 +217,7 @@ fun! s:loader_load_by_filetype(ft) dict abort
 endf
 
 call s:add_methods('loader', [
-      \ 'load', 'save', 'is_cached', 'load_by_filetype', 'is_defined'
+      \ 'load', 'save', 'is_cached', 'is_defined', 'load_by_filetype'
       \ ])
 
 " }}}
