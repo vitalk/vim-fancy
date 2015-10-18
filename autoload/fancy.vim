@@ -270,10 +270,6 @@ fun! s:fancy() abort
   return fancy
 endf
 
-fun! s:fancy_sync() dict abort
-  return s:sync()
-endf
-
 fun! s:fancy_filetype() dict abort
   let filetype = self.matcher.filetype(self)
   return empty(filetype)
@@ -292,7 +288,7 @@ fun! s:fancy_destroy() dict abort
   call remove(s:fancy_objects, index(s:fancy_objects, self))
 endf
 
-call s:add_methods('fancy', ['sync', 'filetype', 'text', 'destroy'])
+call s:add_methods('fancy', ['filetype', 'text', 'destroy'])
 
 
 fun! s:lookup_fancy(id)
