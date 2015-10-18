@@ -202,7 +202,7 @@ fun! s:loader() abort
   return loader
 endf
 
-fun! s:loader_load(ft) dict abort
+fun! s:loader_load_from_cache(ft) dict abort
   return self.filetypes[a:ft]
 endf
 
@@ -219,9 +219,9 @@ fun! s:loader_is_defined(ft) dict abort
   return !empty(globpath(&rtp, func))
 endf
 
-fun! s:loader_load_by_filetype(ft) dict abort
+fun! s:loader_load(ft) dict abort
   if self.is_cached(a:ft)
-    return self.load(a:ft)
+    return self.load_from_cache(a:ft)
 
   elseif self.is_defined(a:ft)
     let matchers = fancy#ft#{a:ft}#matchers()
@@ -231,7 +231,7 @@ fun! s:loader_load_by_filetype(ft) dict abort
 endf
 
 call s:add_methods('loader', [
-      \ 'load', 'save', 'is_cached', 'is_defined', 'load_by_filetype'
+      \ 'load', 'load_from_cache', 'save', 'is_cached', 'is_defined'
       \ ])
 
 " }}}
@@ -240,7 +240,7 @@ call s:add_methods('loader', [
 let s:fancy_prototype = {}
 
 fun! s:fancy() abort
-  let matchers = s:loader().load_by_filetype(&filetype)
+  let matchers = s:loader().load(&filetype)
   if empty(matchers)
     call s:error(printf('%s: no available matcher', &filetype))
     return
