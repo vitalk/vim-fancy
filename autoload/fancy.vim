@@ -319,12 +319,16 @@ fun! fancy#init() abort
   " - ensure the buffer is wiped out when it's no longer displayed
   "   in a window;
   " - mark buffer as nomodified, to prevent warning when trying to close it;
+  " - disable swap file for the buffer;
+  " - show buffer in the buffer list;
   " - rename buffer according with its spec.
   let buffer = s:buffer(name, fancy.id)
   call buffer.write(fancy.text())
   call buffer.setvar('&ft', fancy.filetype())
   call buffer.setvar('&bufhidden', 'wipe')
   call buffer.setvar('&modified', 0)
+  call buffer.setvar('&swapfile', 0)
+  call buffer.setvar('&buflisted', 1)
   sil exe 'file '.buffer.spec()
 endf
 

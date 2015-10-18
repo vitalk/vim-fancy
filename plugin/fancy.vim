@@ -14,7 +14,6 @@ augroup fancy_files
   au BufLeave     fancy://**  call fancy#sync(expand('<amatch>'))
   au BufWipeout   fancy://**  call fancy#destroy(expand('<amatch>'))
   au BufEnter     fancy://**
-        \ setl bufhidden=wipe bl noswapfile |
         \ nnore <buffer> q :write<bar>close<cr>
 augroup END
 
