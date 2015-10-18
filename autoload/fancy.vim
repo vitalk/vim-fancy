@@ -29,6 +29,11 @@ endf
 
 let s:buffer_prototype = {}
 
+" Returns a new buffer instance.
+"
+" Arguments:
+" - buffer number (as per bufnr spec), use current buffer when not set;
+" - number of fancy object if any.
 fun! s:buffer(...) abort
   let buffer = {
         \ '#': bufnr(a:0 ? a:1 : '%'),
