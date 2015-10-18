@@ -92,12 +92,21 @@ fun! s:buffer_delete() dict abort
   endif
 endf
 
+" Returns the content of the buffer.
+"
+" - the line number to start (read from the beginning if not set);
+" - the line number to end (read until the end if not set).
 fun! s:buffer_read(...) dict abort
   return getbufline(self.name(),
         \ a:0 ? a:1 : 1,
         \ (a:0 == 2) ? a:2 : '$')
 endf
 
+" Write text to the buffer.
+"
+" Arguments:
+" - the optional line number to start with;
+" - text to write (as per setline spec).
 fun! s:buffer_write(...) dict abort
   if empty(a:0)
     return
