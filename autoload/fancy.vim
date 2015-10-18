@@ -347,7 +347,7 @@ endf
 fun! fancy#sync(bufnr) abort
   " Get buffer and related fancy object.
   let buffer = s:buffer(a:bufnr)
-  let fancy = s:lookup_fancy(buffer)
+  let fancy  = s:lookup_fancy(buffer)
 
   " Go to original buffer.
   let winnr = bufwinnr(fancy.buffer.name())
@@ -376,7 +376,7 @@ endf
 
 fun! fancy#destroy(bufnr) abort
   let buffer = s:buffer(a:bufnr)
-  let fancy = s:lookup_fancy(buffer)
+  let fancy  = s:lookup_fancy(buffer)
   call fancy.destroy()
 endf
 
