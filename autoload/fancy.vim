@@ -142,7 +142,7 @@ call s:add_methods('buffer', [
 
 let s:matcher_prototype = {}
 
-fun! s:matcher(...) abort
+fun! s:matcher() abort
   let matcher = {
         \ 'start_at': 0,
         \ 'end_at': 0,
@@ -169,7 +169,7 @@ endf
 
 " Find fenced region and save it position if any. Return false if
 " no region has been found and true otherwise.
-fun! s:matcher_find_region(...) dict abort
+fun! s:matcher_find_region() dict abort
   let self.start_at     = self.start_line()
   let self.indent_level = indent(self.start_at)
   let self.end_at       = self.end_line()
