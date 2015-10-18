@@ -291,8 +291,10 @@ endf
 call s:add_methods('fancy', ['filetype', 'text', 'destroy'])
 
 
-fun! s:lookup_fancy(id)
-  let found = filter(copy(s:fancy_objects), 'v:val["id"] == a:id')
+" Returns fancy object bound to buffer.
+fun! s:lookup_fancy(buffer)
+  let fancy_id = a:buffer.fancy_id()
+  let found = filter(copy(s:fancy_objects), 'v:val["id"] == fancy_id')
   if empty(found)
     call s:error('Original buffer does no longer exist! Aborting!')
     return
@@ -345,7 +347,7 @@ endf
 fun! fancy#sync(bufnr) abort
   " Get buffer and related fancy object.
   let buffer = s:buffer(a:bufnr)
-  let fancy = s:lookup_fancy(buffer.fancy_id())
+  let fancy = s:lookup_fancy(buffer)
 
   " Go to original buffer.
   let winnr = bufwinnr(fancy.buffer.name())
@@ -374,7 +376,7 @@ endf
 
 fun! fancy#destroy(bufnr) abort
   let buffer = s:buffer(a:bufnr)
-  let fancy = s:lookup_fancy(buffer.fancy_id())
+  let fancy = s:lookup_fancy(buffer)
   call fancy.destroy()
 endf
 
