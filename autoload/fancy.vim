@@ -161,12 +161,11 @@ endf
 fun! s:matcher_end_line(...) dict abort
 endf
 
-" Returns the filetype of the found region.
+" Returns the filetype of the region.
 "
 " Arguments:
-" - the fancy object (can be used to read and extract data from
-"   original buffer).
-fun! s:matcher_filetype(...) dict abort
+" - the fancy object (can be used to read and extract data from buffer).
+fun! s:matcher_filetype(fancy, ...) dict abort
 endf
 
 " Find fenced region and save it position if any. Return false if
