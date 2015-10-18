@@ -94,6 +94,7 @@ endf
 
 " Returns the content of the buffer.
 "
+" Arguments:
 " - the line number to start (read from the beginning if not set);
 " - the line number to end (read until the end if not set).
 fun! s:buffer_read(...) dict abort
@@ -120,7 +121,7 @@ endf
 
 " Returns the buffer content with or without indentation.
 "
-" The arguments are:
+" Arguments:
 " - the indentation level (dedent buffer when value is negative and indent otherwise)
 " - the line number to start (read from the beginning if not set)
 " - the line number to end (process until the end if not set)
@@ -162,6 +163,7 @@ endf
 
 " Returns the filetype of the found region.
 "
+" Arguments:
 " - the fancy object (can be used to read and extract data from
 "   original buffer).
 fun! s:matcher_filetype(...) dict abort
