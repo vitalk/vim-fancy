@@ -270,8 +270,8 @@ endf
 fun! s:fancy_text() dict abort
   return self.buffer.indent(
         \ -self.matcher.indent_level,
-        \ self.matcher.start_at + 1,
-        \ self.matcher.end_at - 1)
+        \  self.matcher.start_at + 1,
+        \  self.matcher.end_at - 1)
 endf
 
 fun! s:fancy_destroy() dict abort
