@@ -20,7 +20,7 @@ augroup END
 
 augroup fancy_markdown
   au!
-  au FileType markdown nnore <s-e> :call fancy#edit()<cr>
+  au FileType markdown nnore <s-e> :call fancy#init()<cr>
 augroup END
 
 " }}}

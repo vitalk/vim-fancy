@@ -290,34 +290,47 @@ fun! s:lookup_fancy(id)
   return found[0]
 endf
 
-fun! s:edit()
+" }}}
+" Fancy public interface {{{
+
+fun! fancy#matcher() abort
+  return s:matcher()
+endf
+
+fun! fancy#fancy() abort
+  return s:fancy()
+endf
+
+fun! fancy#init() abort
+  " Create a new fancy instance for the current buffer. Exit silently when
+  " fenced region does not found.
   let fancy = fancy#fancy()
   if (type(fancy) != type({}))
     return
   endif
 
+  " Create a new temporary file and open it in split.
   let name = tempname()
   exe 'split '.name
-  let buffer = s:buffer(name, fancy.id)
 
+  " Bind buffer to the fancy object and
+  " - copy fenced region into it;
+  " - detect and set filetype;
+  " - ensure the buffer is wiped out when it's no longer displayed
+  "   in a window;
+  " - mark buffer as nomodified, to prevent warning when trying to close it;
+  " - rename buffer according with its spec.
+  let buffer = s:buffer(name, fancy.id)
+  call buffer.write(fancy.text())
   call buffer.setvar('&ft', fancy.filetype())
   call buffer.setvar('&bufhidden', 'wipe')
-  call buffer.write(fancy.text())
-
+  call buffer.setvar('&modified', 0)
   sil exe 'file '.buffer.spec()
-  setl nomodified
 endf
 
-fun! s:destroy(...)
-  let bufnr = a:0 ? a:1[0] : '%'
-  let buffer = s:buffer(bufnr)
-  let fancy = s:lookup_fancy(buffer.fancy_id())
-  call fancy.destroy()
-endf
-
-fun! s:sync(...)
-  let bufnr = a:0 ? a:1[0] : '%'
-  let buffer = s:buffer(bufnr)
+fun! fancy#sync(bufnr) abort
+  " Get buffer and related fancy object.
+  let buffer = s:buffer(a:bufnr)
   let fancy = s:lookup_fancy(buffer.fancy_id())
 
   " Go to original buffer.
@@ -339,37 +352,16 @@ fun! s:sync(...)
   call fancy.matcher.find_region()
 endf
 
-fun! s:write(...)
-  let bufnr = a:0 ? a:1[0] : '%'
-  sil exe 'write! '.s:buffer(bufnr).path()
-  setl nomodified
+fun! fancy#write(bufnr) abort
+  let buffer = s:buffer(a:bufnr)
+  sil exe 'write! '.buffer.path()
+  call buffer.setvar('&modified', 0)
 endf
 
-" }}}
-" Funcy public interface {{{
-
-fun! fancy#matcher() abort
-  return s:matcher()
-endf
-
-fun! fancy#fancy() abort
-  return s:fancy()
-endf
-
-fun! fancy#edit() abort
-  return s:edit()
-endf
-
-fun! fancy#sync(...) abort
-  return s:sync(a:000)
-endf
-
-fun! fancy#write(...) abort
-  return s:write(a:000)
-endf
-
-fun! fancy#destroy(...) abort
-  return s:destroy(a:000)
+fun! fancy#destroy(bufnr) abort
+  let buffer = s:buffer(a:bufnr)
+  let fancy = s:lookup_fancy(buffer.fancy_id())
+  call fancy.destroy()
 endf
 
 " }}}
