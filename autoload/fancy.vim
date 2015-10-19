@@ -24,25 +24,16 @@ fun! s:get_id()
   return s:id
 endf
 
-fun! s:indent_line(line, indent)
-  return printf('%*s%s', a:indent, a:indent ? ' ' : '', a:line)
-endf
-
-fun! s:dedent_line(line, indent)
-  return substitute(a:line, '^\s\{'.a:indent.'\}', '', '')
-endf
-
-fun! s:indent_lines(lines, indent)
-  return a:indent < 0
-        \ ? map(lines, 's:dedent_line(v:val, indent)')
-        \ : map(lines, 's:indent_line(v:val, indent)')
-endf
-
 " }}}
 " Buffer prototype {{{
 
 let s:buffer_prototype = {}
 
+" Returns a new buffer instance.
+"
+" Arguments:
+" - buffer number (as per bufnr spec), use current buffer when not set;
+" - number of fancy object if any.
 fun! s:buffer(...) abort
   let buffer = {
         \ '#': bufnr(a:0 ? a:1 : '%'),
@@ -101,12 +92,22 @@ fun! s:buffer_delete() dict abort
   endif
 endf
 
+" Returns the content of the buffer.
+"
+" Arguments:
+" - the line number to start (read from the beginning if not set);
+" - the line number to end (read until the end if not set).
 fun! s:buffer_read(...) dict abort
   return getbufline(self.name(),
         \ a:0 ? a:1 : 1,
         \ (a:0 == 2) ? a:2 : '$')
 endf
 
+" Write text to the buffer.
+"
+" Arguments:
+" - the optional line number to start with;
+" - text to write (as per setline spec).
 fun! s:buffer_write(...) dict abort
   if empty(a:0)
     return
@@ -120,7 +121,7 @@ endf
 
 " Returns the buffer content with or without indentation.
 "
-" The arguments are:
+" Arguments:
 " - the indentation level (dedent buffer when value is negative and indent otherwise)
 " - the line number to start (read from the beginning if not set)
 " - the line number to end (process until the end if not set)
@@ -128,8 +129,8 @@ fun! s:buffer_indent(indent, ...) dict abort
   let start_at = a:0 ? a:1 : 1
   let end_at   = (a:0 > 1) ? a:2 : '$'
   return a:indent < 0
-        \ ? map(self.read(start_at, end_at), 's:dedent_line(v:val, a:indent)')
-        \ : map(self.read(start_at, end_at), 's:indent_line(v:val, a:indent)')
+        \ ? map(self.read(start_at, end_at), 'fancy#util#dedent_line(v:val, a:indent)')
+        \ : map(self.read(start_at, end_at), 'fancy#util#indent_line(v:val, a:indent)')
 endf
 
 call s:add_methods('buffer', [
@@ -138,21 +139,117 @@ call s:add_methods('buffer', [
       \ ])
 
 " }}}
+" Matcher prototype {{{
+
+let s:matcher_prototype = {}
+
+fun! s:matcher() abort
+  let matcher = {
+        \ 'start_at': 0,
+        \ 'end_at': 0,
+        \ 'indent_level': 0,
+        \ }
+  call extend(matcher, s:matcher_prototype, 'keep')
+  return matcher
+endf
+
+" Returns the number of the first line of the region.
+fun! s:matcher_start_line(...) dict abort
+endf
+
+" Returns the number of the last line of the region.
+fun! s:matcher_end_line(...) dict abort
+endf
+
+" Returns the filetype of the region.
+"
+" Arguments:
+" - the fancy object (can be used to read and extract data from buffer).
+fun! s:matcher_filetype(fancy, ...) dict abort
+endf
+
+" Find fenced region and save it position if any. Return false if
+" no region has been found and true otherwise.
+fun! s:matcher_find_region() dict abort
+  let self.start_at     = self.start_line()
+  let self.indent_level = indent(self.start_at)
+  let self.end_at       = self.end_line()
+  return (self.start_at != 0 && self.end_at != 0) ? 1 : 0
+endf
+
+fun! s:matcher_search_forward(pattern) dict abort
+  return search(a:pattern, 'cnW')
+endf
+
+fun! s:matcher_search_backward(pattern) dict abort
+  return search(a:pattern, 'bcnW')
+endf
+
+call s:add_methods('matcher', [
+      \ 'filetype', 'start_line', 'end_line', 'find_region',
+      \ 'search_forward', 'search_backward'
+      \ ])
+
+" }}}
+" Loader prototype {{{
+
+let s:loader_prototype = {}
+
+fun! s:loader() abort
+  let loader = {
+        \ 'filetypes': {}
+        \ }
+  call extend(loader, s:loader_prototype, 'keep')
+  return loader
+endf
+
+fun! s:loader_load_from_cache(ft) dict abort
+  return self.filetypes[a:ft]
+endf
+
+fun! s:loader_save_to_cache(ft, list) dict abort
+  let self.filetypes[a:ft] = a:list
+endf
+
+fun! s:loader_is_cached(ft) dict abort
+  return has_key(self.filetypes, a:ft)
+endf
+
+fun! s:loader_is_defined(ft) dict abort
+  let path = 'autoload/fancy/ft/'.a:ft.'.vim'
+  return !empty(globpath(&rtp, path))
+endf
+
+fun! s:loader_load(ft) dict abort
+  if self.is_cached(a:ft)
+    return self.load_from_cache(a:ft)
+
+  elseif self.is_defined(a:ft)
+    let matchers = fancy#ft#{a:ft}#matchers()
+    call self.save_to_cache(a:ft, matchers)
+    return matchers
+  endif
+endf
+
+call s:add_methods('loader', [
+      \ 'load', 'load_from_cache', 'save_to_cache', 'is_cached', 'is_defined'
+      \ ])
+
+" }}}
 " Fancy prototype {{{
 
 let s:fancy_prototype = {}
 
 fun! s:fancy() abort
-  let candidates = s:get_filetype_options(&filetype)
-  if empty(candidates)
-    call s:error(printf('%s: no available search options', &filetype))
+  let matchers = s:loader().load(&filetype)
+  if empty(matchers)
+    call s:error(printf('%s: no available matcher', &filetype))
     return
   endif
 
   let found = 0
-  for search_options in candidates
-    let [start_at, end_at] = s:get_region_bounds(search_options)
-    if start_at != 0 && end_at != 0
+  for matcher in matchers
+    if matcher.find_region()
       let found = 1
       break
     endif
@@ -165,11 +262,8 @@ fun! s:fancy() abort
 
   let fancy = {
         \ 'id': s:get_id(),
-        \ 'options': search_options,
-        \ 'start_at': start_at,
-        \ 'end_at': end_at,
+        \ 'matcher': matcher,
         \ 'buffer': s:buffer(),
-        \ 'indent_level': indent(start_at)
         \ }
   call extend(fancy, s:fancy_prototype, 'keep')
 
@@ -177,12 +271,8 @@ fun! s:fancy() abort
   return fancy
 endf
 
-fun! s:fancy_sync() dict abort
-  return s:sync()
-endf
-
 fun! s:fancy_filetype() dict abort
-  let filetype = self.options.filetype(self)
+  let filetype = self.matcher.filetype(self)
   return empty(filetype)
         \ ? self.buffer.getvar('&filetype')
         \ : filetype
@@ -190,20 +280,22 @@ endf
 
 fun! s:fancy_text() dict abort
   return self.buffer.indent(
-        \ -self.indent_level,
-        \ self.start_at + 1,
-        \ self.end_at - 1)
+        \ -self.matcher.indent_level,
+        \  self.matcher.start_at + 1,
+        \  self.matcher.end_at - 1)
 endf
 
 fun! s:fancy_destroy() dict abort
   call remove(s:fancy_objects, index(s:fancy_objects, self))
 endf
 
-call s:add_methods('fancy', ['sync', 'filetype', 'text', 'destroy'])
+call s:add_methods('fancy', ['filetype', 'text', 'destroy'])
 
 
-fun! s:lookup_fancy(id)
-  let found = filter(copy(s:fancy_objects), 'v:val["id"] == a:id')
+" Returns fancy object bound to buffer.
+fun! s:lookup_fancy(buffer)
+  let fancy_id = a:buffer.fancy_id()
+  let found = filter(copy(s:fancy_objects), 'v:val["id"] == fancy_id')
   if empty(found)
     call s:error('Original buffer does no longer exist! Aborting!')
     return
@@ -211,56 +303,52 @@ fun! s:lookup_fancy(id)
   return found[0]
 endf
 
-fun! s:get_filetype_options(ft)
-  if has_key(g:fancy_filetypes, a:ft)
-    return g:fancy_filetypes[a:ft]
-  endif
-  return []
+" }}}
+" Fancy public interface {{{
+
+fun! fancy#matcher() abort
+  return s:matcher()
 endf
 
-fun! s:search_forward(pattern)
-  return search(a:pattern, 'cnW')
+fun! fancy#fancy() abort
+  return s:fancy()
 endf
 
-fun! s:search_backward(pattern)
-  return search(a:pattern, 'bcnW')
-endf
-
-fun! s:get_region_bounds(options)
-  let start_at = s:search_backward(a:options.start_at)
-  let end_at   = s:search_forward(a:options.end_at)
-  return [start_at, end_at]
-endf
-
-fun! s:edit()
+fun! fancy#init() abort
+  " Create a new fancy instance for the current buffer. Exit silently when
+  " fenced region does not found.
   let fancy = fancy#fancy()
   if (type(fancy) != type({}))
     return
   endif
 
+  " Create a new temporary file and open it in split.
   let name = tempname()
   exe 'split '.name
-  let buffer = s:buffer(name, fancy.id)
 
+  " Bind buffer to the fancy object and
+  " - copy fenced region into it;
+  " - detect and set filetype;
+  " - ensure the buffer is wiped out when it's no longer displayed
+  "   in a window;
+  " - mark buffer as nomodified, to prevent warning when trying to close it;
+  " - disable swap file for the buffer;
+  " - show buffer in the buffer list;
+  " - rename buffer according with its spec.
+  let buffer = s:buffer(name, fancy.id)
+  call buffer.write(fancy.text())
   call buffer.setvar('&ft', fancy.filetype())
   call buffer.setvar('&bufhidden', 'wipe')
-  call buffer.write(fancy.text())
-
+  call buffer.setvar('&modified', 0)
+  call buffer.setvar('&swapfile', 0)
+  call buffer.setvar('&buflisted', 1)
   sil exe 'file '.buffer.spec()
-  setl nomodified
 endf
 
-fun! s:destroy(...)
-  let bufnr = a:0 ? a:1[0] : '%'
-  let buffer = s:buffer(bufnr)
-  let fancy = s:lookup_fancy(buffer.fancy_id())
-  call fancy.destroy()
-endf
-
-fun! s:sync(...)
-  let bufnr = a:0 ? a:1[0] : '%'
-  let buffer = s:buffer(bufnr)
-  let fancy = s:lookup_fancy(buffer.fancy_id())
+fun! fancy#sync(bufnr) abort
+  " Get buffer and related fancy object.
+  let buffer = s:buffer(a:bufnr)
+  let fancy  = s:lookup_fancy(buffer)
 
   " Go to original buffer.
   let winnr = bufwinnr(fancy.buffer.name())
@@ -269,45 +357,28 @@ fun! s:sync(...)
   endif
 
   " Sync any changes.
-  if (fancy.end_at - fancy.start_at > 1)
-    exe printf('%s,%s delete _', fancy.start_at + 1, fancy.end_at - 1)
+  if (fancy.matcher.end_at - fancy.matcher.start_at > 1)
+    exe printf('%s,%s delete _', fancy.matcher.start_at + 1, fancy.matcher.end_at - 1)
   endif
-  call append(fancy.start_at, buffer.indent(fancy.indent_level))
+  call append(fancy.matcher.start_at, buffer.indent(fancy.matcher.indent_level))
 
   " Restore the original cursor position.
   call setpos('.', fancy.buffer.pos)
 
   " Update start/end block position.
-  let [fancy.start_at, fancy.end_at] = s:get_region_bounds(fancy.options)
+  call fancy.matcher.find_region()
 endf
 
-fun! s:write(...)
-  let bufnr = a:0 ? a:1[0] : '%'
-  sil exe 'write! '.s:buffer(bufnr).path()
-  setl nomodified
+fun! fancy#write(bufnr) abort
+  let buffer = s:buffer(a:bufnr)
+  sil exe 'write! '.buffer.path()
+  call buffer.setvar('&modified', 0)
 endf
 
-" }}}
-" Funcy public interface {{{
-
-fun! fancy#fancy() abort
-  return s:fancy()
-endf
-
-fun! fancy#edit() abort
-  return s:edit()
-endf
-
-fun! fancy#sync(...) abort
-  return s:sync(a:000)
-endf
-
-fun! fancy#write(...) abort
-  return s:write(a:000)
-endf
-
-fun! fancy#destroy(...) abort
-  return s:destroy(a:000)
+fun! fancy#destroy(bufnr) abort
+  let buffer = s:buffer(a:bufnr)
+  let fancy  = s:lookup_fancy(buffer)
+  call fancy.destroy()
 endf
 
 " }}}
