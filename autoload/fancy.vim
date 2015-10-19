@@ -216,8 +216,8 @@ fun! s:loader_is_cached(ft) dict abort
 endf
 
 fun! s:loader_is_defined(ft) dict abort
-  let func = 'autoload/fancy/ft/'.a:ft.'.vim'
-  return !empty(globpath(&rtp, func))
+  let path = 'autoload/fancy/ft/'.a:ft.'.vim'
+  return !empty(globpath(&rtp, path))
 endf
 
 fun! s:loader_load(ft) dict abort
