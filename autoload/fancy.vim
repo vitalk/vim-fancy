@@ -207,7 +207,7 @@ fun! s:loader_load_from_cache(ft) dict abort
   return self.filetypes[a:ft]
 endf
 
-fun! s:loader_save(ft, list) dict abort
+fun! s:loader_save_to_cache(ft, list) dict abort
   let self.filetypes[a:ft] = a:list
 endf
 
@@ -226,13 +226,13 @@ fun! s:loader_load(ft) dict abort
 
   elseif self.is_defined(a:ft)
     let matchers = fancy#ft#{a:ft}#matchers()
-    call self.save(a:ft, matchers)
+    call self.save_to_cache(a:ft, matchers)
     return matchers
   endif
 endf
 
 call s:add_methods('loader', [
-      \ 'load', 'load_from_cache', 'save', 'is_cached', 'is_defined'
+      \ 'load', 'load_from_cache', 'save_to_cache', 'is_cached', 'is_defined'
       \ ])
 
 " }}}
